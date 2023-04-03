@@ -48,6 +48,7 @@ local function make_entry_from_bookmarks(opts)
         separator = "▏",
         items = {
             { width = opts.width_line or 5 },
+            { width = opts.width_name or 20 },
             { width = opts.width_text or 60 },
             { remaining = true }
         }
@@ -68,8 +69,9 @@ local function make_entry_from_bookmarks(opts)
 
         return displayer {
             line_info,
-            entry.text:gsub(".* | ", ""),
+            -- entry.text:gsub(".* | ", ""),
             filename,
+            entry.text
         }
     end
 
