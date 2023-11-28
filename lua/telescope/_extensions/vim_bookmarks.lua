@@ -49,29 +49,25 @@ local function make_entry_from_bookmarks(opts)
         items = {
             { width = opts.width_line or 5 },
             { width = opts.width_name or 20 },
-            { width = opts.width_text or 60 },
+            { width = opts.width_path or 80 },
             { remaining = true }
         }
     }
 
     local make_display = function(entry)
-        local filename
-        if not opts.path_display then
-            filename = entry.filename
-            if opts.tail_path then
-                filename = utils.path_tail(filename)
-            elseif opts.shorten_path then
-                filename = utils.path_shorten(filename)
-            end
-        end
-
         local line_info = {entry.lnum, "TelescopeResultsLineNr"}
+        local filename = utils.path_tail(entry.filename)
+        local filepath
+        if string.sub(entry.text, 1, 11) == 'Annotation:' then
+            filepath = entry.text
+        else
+            filepath = utils.path_smart(entry.filename)
+        end
 
         return displayer {
             line_info,
-            -- entry.text:gsub(".* | ", ""),
             filename,
-            entry.text
+            filepath
         }
     end
 
@@ -81,7 +77,7 @@ local function make_entry_from_bookmarks(opts)
 
             value = entry,
             ordinal = (
-            not opts.ignore_filename and filename
+            not opts.ignore_filename and entry.filename
             or ''
             ) .. ' ' .. entry.text,
             display = make_display,
