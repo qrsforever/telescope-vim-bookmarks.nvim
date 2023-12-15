@@ -1,3 +1,4 @@
+local Path = require "plenary.path"
 local finders = require('telescope.finders')
 local pickers = require('telescope.pickers')
 local entry_display = require('telescope.pickers.entry_display')
@@ -18,7 +19,7 @@ local function get_bookmarks(files, opts)
         for _,line in ipairs(vim.fn['bm#all_lines'](file)) do
             local bookmark = vim.fn['bm#get_bookmark_by_line'](file, line)
 
-            local text = bookmark.annotation ~= "" and "Annotation: " .. bookmark.annotation or bookmark.content
+            local text = bookmark.content
             if text == "" then
                 text = "(empty line)"
             end
@@ -31,6 +32,7 @@ local function get_bookmarks(files, opts)
                     lnum = tonumber(line),
                     col=1,
                     text = text,
+                    annotation = bookmark.annotation,
                     sign_idx = bookmark.sign_idx,
                 })
             end
@@ -47,27 +49,31 @@ local function make_entry_from_bookmarks(opts)
     local displayer = entry_display.create {
         separator = "▏",
         items = {
-            { width = opts.width_line or 5 },
+            { width = opts.width_line or  5 },
             { width = opts.width_name or 20 },
-            { width = opts.width_path or 80 },
+            { width = opts.width_anno or 20 },
+            { width = opts.width_path or 70 },
             { remaining = true }
         }
     }
 
     local make_display = function(entry)
         local line_info = {entry.lnum, "TelescopeResultsLineNr"}
-        local filename = utils.path_tail(entry.filename)
-        local filepath
-        if string.sub(entry.text, 1, 11) == 'Annotation:' then
-            filepath = entry.text
-        else
-            filepath = utils.path_smart(entry.filename)
+        local annotation = entry.anno
+        if annotation == ""
+        then
+            local gitdir = vim.fn.finddir(".git", vim.fn.expand "%:p" .. ";")
+            if gitdir ~= "" then
+                local gitroot = Path:new(gitdir):parent():absolute()
+                annotation = string.gsub(gitroot, "(.*/)(.*)", "%2")
+            end
         end
 
         return displayer {
             line_info,
-            filename,
-            filepath
+            utils.path_tail(entry.filename),
+            annotation,
+            utils.path_smart(entry.filename)
         }
     end
 
@@ -81,11 +87,11 @@ local function make_entry_from_bookmarks(opts)
             or ''
             ) .. ' ' .. entry.text,
             display = make_display,
-
             filename = entry.filename,
             lnum = entry.lnum,
-            col = 1,
+            anno = entry.annotation,
             text = entry.text,
+            col = 1,
         }
     end
 end
@@ -96,7 +102,7 @@ local function make_bookmark_picker(filenames, opts)
     local make_finder = function()
         local bookmarks = get_bookmarks(filenames, opts)
 
-        if vim.tbl_isempty(bookmarks) then 
+        if vim.tbl_isempty(bookmarks) then
             print("No bookmarks!")
             return
         end
@@ -106,7 +112,7 @@ local function make_bookmark_picker(filenames, opts)
             entry_maker = make_entry_from_bookmarks(opts),
         }
     end
-    
+
     local initial_finder = make_finder()
     if not initial_finder then return end
 
@@ -116,8 +122,8 @@ local function make_bookmark_picker(filenames, opts)
         previewer = conf.qflist_previewer(opts),
         sorter = conf.generic_sorter(opts),
 
-        attach_mappings = function(prompt_bufnr, map) 
-            local refresh_picker = function() 
+        attach_mappings = function(prompt_bufnr, map)
+            local refresh_picker = function()
                 local new_finder = make_finder()
                 if new_finder then
                     action_state.get_current_picker(prompt_bufnr):refresh(make_finder())
