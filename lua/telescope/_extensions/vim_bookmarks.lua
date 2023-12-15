@@ -62,7 +62,7 @@ local function make_entry_from_bookmarks(opts)
         local annotation = entry.anno
         if annotation == ""
         then
-            local gitdir = vim.fn.finddir(".git", vim.fn.expand "%:p" .. ";")
+            local gitdir = vim.fn.finddir(".git", entry.filename .. ";")
             if gitdir ~= "" then
                 local gitroot = Path:new(gitdir):parent():absolute()
                 annotation = string.gsub(gitroot, "(.*/)(.*)", "%2")
