@@ -60,12 +60,14 @@ local function make_entry_from_bookmarks(opts)
     local make_display = function(entry)
         local line_info = {entry.lnum, "TelescopeResultsLineNr"}
         local annotation = entry.anno
+        local entry_path = entry.filename
         if annotation == ""
         then
             local gitdir = vim.fn.finddir(".git", entry.filename .. ";")
             if gitdir ~= "" then
                 local gitroot = Path:new(gitdir):parent():absolute()
                 annotation = string.gsub(gitroot, "(.*/)(.*)", "%2")
+                entry_path = string.sub(entry_path, string.len(gitroot) + 2, string.len(entry_path))
             end
         end
 
@@ -73,7 +75,7 @@ local function make_entry_from_bookmarks(opts)
             line_info,
             utils.path_tail(entry.filename),
             annotation,
-            utils.path_smart(entry.filename)
+            entry_path,
         }
     end
 
