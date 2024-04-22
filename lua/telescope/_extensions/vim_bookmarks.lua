@@ -69,6 +69,7 @@ local function make_entry_from_bookmarks(opts)
                 annotation = string.gsub(gitroot, "(.*/)(.*)", "%2")
                 entry_path = string.sub(entry_path, string.len(gitroot) + 2, string.len(entry_path))
             end
+            entry_path = entry.text
         end
 
         return displayer {
@@ -82,7 +83,6 @@ local function make_entry_from_bookmarks(opts)
     return function(entry)
         return {
             valid = true,
-
             value = entry,
             ordinal = (
             not opts.ignore_filename and entry.filename
